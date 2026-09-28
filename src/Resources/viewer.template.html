@@ -5,23 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MDViewer</title>
   <style>
-    /* CSS Variables for Dark and Light Themes */
+    /* CSS Variables for Dark and Light Themes - High Contrast */
     :root[data-theme="dark"] {
       --bg-primary: #0d1117;
       --bg-secondary: rgba(22, 27, 34, 0.85);
       --bg-tertiary: #21262d;
-      --border-color: #30363d;
+      --border-color: #3d4758;
       --border-hover: #8b949e;
-      --text-primary: #e6edf3;
-      --text-secondary: #8b949e;
-      --text-muted: #6e7681;
+      --text-primary: #f0f6fc;
+      --text-secondary: #a2abb7;
+      --text-muted: #768390;
       --accent: #58a6ff;
       --accent-hover: #79b8ff;
       --accent-subtle: rgba(56, 139, 253, 0.15);
       --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
       --sidebar-bg: rgba(13, 17, 23, 0.95);
       --modal-bg: rgba(13, 17, 23, 0.8);
-      --code-bg: #161b22;
+      /* High-contrast code block variables */
+      --code-bg: #161e29;
+      --code-border: #3d4d62;
+      --code-text: #f0f6fc;
+      --inline-code-bg: #1f2937;
+      --inline-code-border: #3f4e66;
+      --inline-code-text: #79c0ff;
+      /* High-contrast table variables */
+      --table-border: #3d4758;
+      --table-th-bg: #1c2430;
+      --table-th-border: #58a6ff;
+      --table-tr-alt: #131922;
+      --table-tr-hover: #1c2636;
       --highlight-search: #ffd33d;
       --highlight-search-active: #ff9800;
     }
@@ -29,18 +41,30 @@
       --bg-primary: #ffffff;
       --bg-secondary: rgba(246, 248, 250, 0.88);
       --bg-tertiary: #eaeef2;
-      --border-color: #d0d7de;
-      --border-hover: #8c959f;
+      --border-color: #b1bac4;
+      --border-hover: #6e7781;
       --text-primary: #1f2328;
-      --text-secondary: #656d76;
-      --text-muted: #8c959f;
+      --text-secondary: #57606a;
+      --text-muted: #6e7781;
       --accent: #0969da;
       --accent-hover: #218bff;
       --accent-subtle: rgba(9, 105, 218, 0.1);
       --shadow: 0 8px 24px rgba(140, 149, 159, 0.2);
       --sidebar-bg: rgba(255, 255, 255, 0.95);
       --modal-bg: rgba(255, 255, 255, 0.8);
-      --code-bg: #f6f8fa;
+      /* High-contrast code block variables */
+      --code-bg: #f3f5f8;
+      --code-border: #d0d7de;
+      --code-text: #1f2328;
+      --inline-code-bg: #eff2f6;
+      --inline-code-border: #cfd6df;
+      --inline-code-text: #0969da;
+      /* High-contrast table variables (Sharp Borders & Crisp Headers) */
+      --table-border: #8c959f;
+      --table-th-bg: #eaeef2;
+      --table-th-border: #313840;
+      --table-tr-alt: #f6f8fa;
+      --table-tr-hover: #eaf1fa;
       --highlight-search: #fff066;
       --highlight-search-active: #ffb703;
     }
@@ -88,11 +112,22 @@
     .app-brand {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       font-weight: 700;
       font-size: 14px;
       color: var(--accent);
       white-space: nowrap;
+    }
+
+    .version-badge {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-subtle);
+      border: 1px solid var(--accent);
+      padding: 1px 6px;
+      border-radius: 12px;
+      letter-spacing: 0.3px;
     }
 
     .file-badge {
@@ -373,14 +408,117 @@
       outline: 2px solid var(--accent);
     }
 
-    /* Code block enhancements */
+    /* Enhanced High-Contrast Code Blocks */
     .markdown-body pre {
       position: relative;
       background-color: var(--code-bg) !important;
-      border: 1px solid var(--border-color) !important;
+      border: 1px solid var(--code-border) !important;
       border-radius: 8px !important;
       padding: 14px 16px !important;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
     }
+    .markdown-body pre code {
+      font-size: 13.5px !important;
+      line-height: 1.6 !important;
+      color: var(--code-text) !important;
+      background: transparent !important;
+      display: block !important;
+    }
+
+    /* Enhanced Inline Code */
+    .markdown-body :not(pre) > code {
+      background-color: var(--inline-code-bg) !important;
+      border: 1px solid var(--inline-code-border) !important;
+      color: var(--inline-code-text) !important;
+      padding: 2.5px 6.5px !important;
+      border-radius: 4px !important;
+      font-weight: 600 !important;
+      font-size: 88% !important;
+      word-break: break-word;
+    }
+
+    /* Enhanced High-Contrast Tables (Sharp Borders, Crisp Headers, Row Hover) */
+    .markdown-body table {
+      border-collapse: collapse !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 18px 0 !important;
+      border: 1.5px solid var(--table-border) !important;
+      border-radius: 6px !important;
+      overflow: hidden !important;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+    }
+    .markdown-body table th {
+      background-color: var(--table-th-bg) !important;
+      color: var(--text-primary) !important;
+      font-weight: 700 !important;
+      padding: 10px 14px !important;
+      border: 1px solid var(--table-border) !important;
+      border-bottom: 2.5px solid var(--table-th-border) !important;
+      text-align: left;
+    }
+    .markdown-body table td {
+      padding: 9px 14px !important;
+      border: 1px solid var(--table-border) !important;
+      color: var(--text-primary) !important;
+      transition: background-color 0.15s ease;
+    }
+    .markdown-body table tr {
+      background-color: transparent !important;
+      border-top: none !important;
+    }
+    .markdown-body table tr:nth-child(even) {
+      background-color: var(--table-tr-alt) !important;
+    }
+    .markdown-body table tr:hover td {
+      background-color: var(--table-tr-hover) !important;
+    }
+
+    /* Dark Mode High-Contrast Syntax Overrides */
+    :root[data-theme="dark"] .hljs {
+      color: #f0f6fc !important;
+      background: transparent !important;
+    }
+    :root[data-theme="dark"] .hljs-comment,
+    :root[data-theme="dark"] .hljs-quote {
+      color: #a5b4c7 !important;
+      font-style: italic;
+    }
+    :root[data-theme="dark"] .hljs-keyword,
+    :root[data-theme="dark"] .hljs-selector-tag,
+    :root[data-theme="dark"] .hljs-subst {
+      color: #ff7b72 !important;
+      font-weight: 600;
+    }
+    :root[data-theme="dark"] .hljs-string,
+    :root[data-theme="dark"] .hljs-title,
+    :root[data-theme="dark"] .hljs-section,
+    :root[data-theme="dark"] .hljs-attribute,
+    :root[data-theme="dark"] .hljs-literal,
+    :root[data-theme="dark"] .hljs-template-tag,
+    :root[data-theme="dark"] .hljs-template-variable,
+    :root[data-theme="dark"] .hljs-type {
+      color: #79c0ff !important;
+    }
+    :root[data-theme="dark"] .hljs-name,
+    :root[data-theme="dark"] .hljs-selector-id,
+    :root[data-theme="dark"] .hljs-selector-class {
+      color: #7ee787 !important;
+    }
+    :root[data-theme="dark"] .hljs-number,
+    :root[data-theme="dark"] .hljs-meta {
+      color: #f2cc60 !important;
+    }
+    :root[data-theme="dark"] .hljs-title.function_ {
+      color: #d2a8ff !important;
+      font-weight: 500;
+    }
+    :root[data-theme="dark"] .hljs-built_in,
+    :root[data-theme="dark"] .hljs-symbol {
+      color: #ffa657 !important;
+    }
+
+    /* Code Copy Button */
     .code-copy-btn {
       position: absolute;
       top: 8px;
@@ -395,6 +533,7 @@
       opacity: 0;
       transition: all 0.15s ease;
       user-select: none;
+      z-index: 10;
     }
     .markdown-body pre:hover .code-copy-btn {
       opacity: 1;
@@ -664,6 +803,7 @@
           <path d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15V4.15C16 3.52 15.48 3 14.85 3zM9 11H7V8.5L5.5 10.5 4 8.5V11H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/>
         </svg>
         <span>MDViewer</span>
+        <span class="version-badge">v1.1.0</span>
       </div>
       <div id="fileBadge" class="file-badge" title="未読込">
         <span class="sync-indicator"></span>
@@ -750,6 +890,7 @@
     <div class="statusbar-right">
       <span id="statReload">自動更新: 有効</span>
       <span id="statUpdated">最終更新: -</span>
+      <span style="font-weight:600;color:var(--text-secondary);">v1.1.0</span>
     </div>
   </footer>
 
@@ -771,7 +912,7 @@
   <div id="helpModal" class="help-modal">
     <div class="help-card">
       <div class="help-card-title">
-        <span>ショートカットキー一覧</span>
+        <span>MDViewer v1.1.0 - ショートカットキー</span>
         <button id="helpClose" class="search-btn">✕</button>
       </div>
       <div class="shortcut-row"><span>ファイルを開く</span><kbd>Ctrl + O</kbd></div>

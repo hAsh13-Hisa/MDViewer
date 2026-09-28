@@ -10,6 +10,13 @@ using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
+[assembly: AssemblyTitle("MDViewer")]
+[assembly: AssemblyDescription("Lightweight Single-Executable Markdown Viewer for Windows 11")]
+[assembly: AssemblyProduct("MDViewer")]
+[assembly: AssemblyVersion("1.1.0.0")]
+[assembly: AssemblyFileVersion("1.1.0.0")]
+[assembly: AssemblyInformationalVersion("1.1.0")]
+
 namespace MDViewer
 {
     static class Program
@@ -75,7 +82,7 @@ namespace MDViewer
             this.initialFile = initialFile;
 
             // Form properties
-            this.Text = "MDViewer";
+            this.Text = "MDViewer v1.1.0";
             this.Width = 1100;
             this.Height = 780;
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -269,7 +276,7 @@ namespace MDViewer
                 );
 
                 this.BeginInvoke(new Action(() => {
-                    this.Text = fileName + " - MDViewer";
+                    this.Text = fileName + " - MDViewer v1.1.0";
                     webView.ExecuteScriptAsync(script);
                 }));
 
