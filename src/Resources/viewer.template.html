@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MDViewer</title>
+  <style>
+    /* CSS Variables for Dark and Light Themes */
+    :root[data-theme="dark"] {
+      --bg-primary: #0d1117;
+      --bg-secondary: rgba(22, 27, 34, 0.85);
+      --bg-tertiary: #21262d;
+      --border-color: #30363d;
+      --border-hover: #8b949e;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --accent: #58a6ff;
+      --accent-hover: #79b8ff;
+      --accent-subtle: rgba(56, 139, 253, 0.15);
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      --sidebar-bg: rgba(13, 17, 23, 0.95);
+      --modal-bg: rgba(13, 17, 23, 0.8);
+      --code-bg: #161b22;
+      --highlight-search: #ffd33d;
+      --highlight-search-active: #ff9800;
+    }
+    :root[data-theme="light"] {
+      --bg-primary: #ffffff;
+      --bg-secondary: rgba(246, 248, 250, 0.88);
+      --bg-tertiary: #eaeef2;
+      --border-color: #d0d7de;
+      --border-hover: #8c959f;
+      --text-primary: #1f2328;
+      --text-secondary: #656d76;
+      --text-muted: #8c959f;
+      --accent: #0969da;
+      --accent-hover: #218bff;
+      --accent-subtle: rgba(9, 105, 218, 0.1);
+      --shadow: 0 8px 24px rgba(140, 149, 159, 0.2);
+      --sidebar-bg: rgba(255, 255, 255, 0.95);
+      --modal-bg: rgba(255, 255, 255, 0.8);
+      --code-bg: #f6f8fa;
+      --highlight-search: #fff066;
+      --highlight-search-active: #ffb703;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: text;
+    }
+
+    /* Top Navigation Bar */
+    .topbar {
+      height: 48px;
+      background: var(--bg-secondary);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      z-index: 100;
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .app-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .file-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      max-width: 380px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-badge.active {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .sync-indicator {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #238636;
+      box-shadow: 0 0 6px #2ea043;
+      flex-shrink: 0;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-icon {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-secondary);
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+    .btn-icon:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border-color: var(--border-color);
+    }
+    .btn-icon.active {
+      background: var(--accent-subtle);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    .btn-icon svg {
+      width: 17px;
+      height: 17px;
+      fill: currentColor;
+    }
+
+    .btn-tooltip {
+      position: relative;
+    }
+    .btn-tooltip::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      top: 115%;
+      right: 50%;
+      transform: translateX(50%);
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      z-index: 1000;
+    }
+    .btn-tooltip:hover::after {
+      opacity: 1;
+    }
+
+    /* Main Container */
+    .app-main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* TOC Sidebar */
+    .sidebar {
+      width: 280px;
+      background: var(--sidebar-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), margin-left 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 50;
+      overflow: hidden;
+      user-select: none;
+    }
+    .sidebar.collapsed {
+      margin-left: -280px;
+    }
+
+    .sidebar-header {
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .toc-count {
+      font-size: 11px;
+      background: var(--bg-tertiary);
+      padding: 2px 6px;
+      border-radius: 10px;
+      color: var(--text-muted);
+    }
+
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 8px;
+    }
+    .sidebar-content::-webkit-scrollbar {
+      width: 6px;
+    }
+    .sidebar-content::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+
+    .toc-item {
+      display: block;
+      padding: 5px 8px;
+      border-radius: 6px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 12.5px;
+      line-height: 1.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: all 0.15s ease;
+      margin-bottom: 2px;
+      cursor: pointer;
+    }
+    .toc-item:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+    .toc-item.active {
+      background: var(--accent-subtle);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .toc-level-1 { font-weight: 600; padding-left: 8px; }
+    .toc-level-2 { padding-left: 20px; }
+    .toc-level-3 { padding-left: 32px; font-size: 12px; }
+    .toc-level-4 { padding-left: 44px; font-size: 11.5px; color: var(--text-muted); }
+    .toc-level-5 { padding-left: 54px; font-size: 11px; color: var(--text-muted); }
+    .toc-level-6 { padding-left: 64px; font-size: 11px; color: var(--text-muted); }
+
+    /* Content Area */
+    .content-container {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 36px 48px;
+      scroll-behavior: smooth;
+    }
+    .content-container::-webkit-scrollbar {
+      width: 10px;
+    }
+    .content-container::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 5px;
+    }
+    .content-container::-webkit-scrollbar-thumb:hover {
+      background: var(--border-hover);
+    }
+
+    .markdown-body {
+      max-width: 900px;
+      margin: 0 auto;
+      background-color: transparent !important;
+      color: var(--text-primary) !important;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    /* Search Bar Overlay */
+    .search-panel {
+      position: absolute;
+      top: 12px;
+      right: 28px;
+      background: var(--bg-secondary);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 6px 10px;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      z-index: 200;
+      animation: fadeIn 0.15s ease-out;
+    }
+    .search-panel.visible {
+      display: flex;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .search-input {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 5px 8px;
+      border-radius: 5px;
+      font-size: 12.5px;
+      outline: none;
+      width: 180px;
+    }
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-subtle);
+    }
+    .search-count {
+      font-size: 11px;
+      color: var(--text-muted);
+      min-width: 48px;
+      text-align: center;
+    }
+    .search-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .search-btn:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+    mark.find-highlight {
+      background-color: var(--highlight-search);
+      color: #000;
+      border-radius: 2px;
+      padding: 1px 2px;
+    }
+    mark.find-highlight.current {
+      background-color: var(--highlight-search-active);
+      outline: 2px solid var(--accent);
+    }
+
+    /* Code block enhancements */
+    .markdown-body pre {
+      position: relative;
+      background-color: var(--code-bg) !important;
+      border: 1px solid var(--border-color) !important;
+      border-radius: 8px !important;
+      padding: 14px 16px !important;
+    }
+    .code-copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .markdown-body pre:hover .code-copy-btn {
+      opacity: 1;
+    }
+    .code-copy-btn:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+    }
+    .code-copy-btn.copied {
+      background: #238636;
+      color: #fff;
+      border-color: #2ea043;
+    }
+
+    /* Images */
+    .markdown-body img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+      cursor: zoom-in;
+      transition: transform 0.2s;
+    }
+    .markdown-body img:hover {
+      opacity: 0.95;
+    }
+
+    /* Image Modal / Lightbox */
+    .image-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      cursor: zoom-out;
+    }
+    .image-modal.visible {
+      display: flex;
+    }
+    .image-modal img {
+      max-width: 90vw;
+      max-height: 90vh;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      user-select: none;
+    }
+
+    /* Welcome / Empty State */
+    .welcome-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 70vh;
+      text-align: center;
+      user-select: none;
+      color: var(--text-secondary);
+    }
+    .welcome-icon {
+      width: 64px;
+      height: 64px;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+    .welcome-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+    .welcome-desc {
+      font-size: 14px;
+      max-width: 440px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .welcome-buttons {
+      display: flex;
+      gap: 12px;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 6px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      padding: 9px 18px;
+      border-radius: 6px;
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-secondary:hover {
+      border-color: var(--border-hover);
+    }
+
+    /* Drag & Drop Overlay */
+    .drop-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(13, 17, 23, 0.85);
+      border: 3px dashed var(--accent);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 2000;
+      color: #fff;
+      pointer-events: none;
+    }
+    .drop-overlay.active {
+      display: flex;
+    }
+    .drop-overlay-text {
+      font-size: 22px;
+      font-weight: 700;
+      margin-top: 16px;
+    }
+
+    /* Status Bar */
+    .statusbar {
+      height: 26px;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      font-size: 11px;
+      color: var(--text-muted);
+      z-index: 100;
+      flex-shrink: 0;
+      user-select: none;
+    }
+    .statusbar-left, .statusbar-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Keyboard Shortcuts Modal */
+    .help-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1500;
+    }
+    .help-modal.visible {
+      display: flex;
+    }
+    .help-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      width: 440px;
+      max-width: 90vw;
+      padding: 24px;
+    }
+    .help-card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--text-primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .shortcut-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 12.5px;
+    }
+    .shortcut-row:last-child {
+      border-bottom: none;
+    }
+    kbd {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 11px;
+      font-family: monospace;
+      color: var(--text-primary);
+    }
+
+    /* Print styling */
+    @media print {
+      .topbar, .sidebar, .statusbar, .search-panel, .image-modal, .help-modal {
+        display: none !important;
+      }
+      .content-container {
+        padding: 0 !important;
+        overflow: visible !important;
+      }
+      .markdown-body {
+        max-width: 100% !important;
+        color: #000 !important;
+      }
+      .markdown-body pre {
+        background-color: #f6f8fa !important;
+        border: 1px solid #d0d7de !important;
+        color: #1f2328 !important;
+      }
+      .code-copy-btn {
+        display: none !important;
+      }
+    }
+  </style>
+
+  <!-- Embedded Github Markdown CSS -->
+  <style>
+    /* __GITHUB_MARKDOWN_CSS__ */
+  </style>
+
+  <!-- Embedded Highlight.js CSS (Dark/Light) -->
+  <style id="hljs-theme-dark">
+    /* __HIGHLIGHT_DARK_CSS__ */
+  </style>
+  <style id="hljs-theme-light" disabled>
+    /* __HIGHLIGHT_LIGHT_CSS__ */
+  </style>
+
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="app-brand">
+        <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor">
+          <path d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15V4.15C16 3.52 15.48 3 14.85 3zM9 11H7V8.5L5.5 10.5 4 8.5V11H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/>
+        </svg>
+        <span>MDViewer</span>
+      </div>
+      <div id="fileBadge" class="file-badge" title="未読込">
+        <span class="sync-indicator"></span>
+        <span id="fileName">ファイル未読込</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button id="btnOpen" class="btn-icon btn-tooltip" data-tooltip="ファイルを開く (Ctrl+O)" aria-label="Open File">
+        <svg viewBox="0 0 16 16"><path d="M1.75 2.5a.25.25 0 0 0-.25.25v10.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25H7.707l-1.854-1.854A.25.25 0 0 0 5.679 2.5H1.75zM0 2.75C0 1.784.784 1 1.75 1h3.929c.464 0 .909.184 1.237.513L8.768 3.364H14.25c.966 0 1.75.784 1.75 1.75v8.386c0 .966-.784 1.75-1.75 1.75H1.75A1.75 1.75 0 0 1 0 13.5V2.75z"/></svg>
+      </button>
+      <button id="btnToc" class="btn-icon btn-tooltip active" data-tooltip="目次 (Ctrl+T)" aria-label="Toggle TOC">
+        <svg viewBox="0 0 16 16"><path d="M2 3.75a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 3.75zm0 4.25a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 8zm0 4.25a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75z"/></svg>
+      </button>
+      <button id="btnSearch" class="btn-icon btn-tooltip" data-tooltip="ページ内検索 (Ctrl+F)" aria-label="Find">
+        <svg viewBox="0 0 16 16"><path d="M10.68 11.74a6 6 0 1 1 1.06-1.06l3.04 3.04a.75.75 0 1 1-1.06 1.06l-3.04-3.04zM11.5 7a4.5 4.5 0 1 0-9 0 4.5 4.5 0 0 0 9 0z"/></svg>
+      </button>
+      <button id="btnTheme" class="btn-icon btn-tooltip" data-tooltip="テーマ切替 (ダーク/ライト)" aria-label="Toggle Theme">
+        <svg viewBox="0 0 16 16"><path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V.75A.75.75 0 0 1 8 0zm0 13a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 8 13zM2.343 2.343a.75.75 0 0 1 1.061 0l1.06 1.061a.75.75 0 0 1-1.06 1.06l-1.06-1.06a.75.75 0 0 1 0-1.061zm9.193 9.193a.75.75 0 0 1 1.06 0l1.061 1.06a.75.75 0 0 1-1.06 1.061l-1.061-1.06a.75.75 0 0 1 0-1.061zM0 8a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5H.75A.75.75 0 0 1 0 8zm13 0a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5A.75.75 0 0 1 13 8zM2.343 13.657a.75.75 0 0 1 0-1.06l1.06-1.061a.75.75 0 1 1 1.061 1.06l-1.06 1.061a.75.75 0 0 1-1.061 0zm9.193-9.193a.75.75 0 0 1 0-1.06l1.061-1.061a.75.75 0 0 1 1.06 1.06l-1.06 1.061a.75.75 0 0 1-1.061 0z"/></svg>
+      </button>
+      <button id="btnPrint" class="btn-icon btn-tooltip" data-tooltip="印刷 / PDF保存 (Ctrl+P)" aria-label="Print">
+        <svg viewBox="0 0 16 16"><path d="M4 1.75C4 .784 4.784 0 5.75 0h4.5C11.216 0 12 .784 12 1.75v1.5h1.75c.966 0 1.75.784 1.75 1.75v6.5A1.75 1.75 0 0 1 13.75 13H12v1.25A1.75 1.75 0 0 1 10.25 16h-4.5A1.75 1.75 0 0 1 4 14.25V13H2.25A1.75 1.75 0 0 1 .5 11.25v-6.5C.5 3.784 1.284 3 2.25 3H4V1.75zM5.5 1.75v1.5h5v-1.5a.25.25 0 0 0-.25-.25h-4.5a.25.25 0 0 0-.25.25zm-3.25 3a.25.25 0 0 0-.25.25v5.5c0 .138.112.25.25.25H4V9.75c0-.966.784-1.75 1.75-1.75h4.5c.966 0 1.75.784 1.75 1.75V11h1.75a.25.25 0 0 0 .25-.25v-5.5a.25.25 0 0 0-.25-.25h-11.5zM5.5 9.75v4.5c0 .138.112.25.25.25h4.5a.25.25 0 0 0 .25-.25v-4.5a.25.25 0 0 0-.25-.25h-4.5a.25.25 0 0 0-.25.25z"/></svg>
+      </button>
+      <button id="btnPin" class="btn-icon btn-tooltip" data-tooltip="最前面に固定" aria-label="Pin on top">
+        <svg viewBox="0 0 16 16"><path d="M9.828.722a.5.5 0 0 1 .354.146l4.95 4.95a.5.5 0 0 1 0 .707c-.48.48-1.072.588-1.503.588-.177 0-.335-.018-.46-.039l-3.134 3.134a5.927 5.927 0 0 1 .16 1.013c.046.702-.032 1.687-.72 2.375a.5.5 0 0 1-.707 0l-2.829-2.828-3.182 3.182c-.195.195-1.076.626-1.576.126s-.069-1.381.126-1.576l3.182-3.182-2.828-2.829a.5.5 0 0 1 0-.707c.688-.688 1.673-.767 2.375-.72a5.922 5.922 0 0 1 1.013.16l3.134-3.133a2.772 2.772 0 0 1-.04-.461c0-.43.108-1.022.589-1.503a.5.5 0 0 1 .353-.146z"/></svg>
+      </button>
+      <button id="btnHelp" class="btn-icon btn-tooltip" data-tooltip="ヘルプ / ショートカット (?)" aria-label="Help">
+        <svg viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M5.255 5.786a.255.255 0 0 1 .255-.255h.85c.14 0 .255.114.255.255v.004c0 .762.618 1.38 1.38 1.38s1.38-.618 1.38-1.38c0-.763-.618-1.38-1.38-1.38-.255 0-.462-.207-.462-.462v-.75c0-.255.207-.462.462-.462 1.69 0 3.06 1.37 3.06 3.054 0 1.27-.78 2.36-1.89 2.82v.87c0 .255-.207.462-.462.462h-.75a.462.462 0 0 1-.462-.462v-1.25c0-.255.207-.462.462-.462.83 0 1.5-.67 1.5-1.5 0-.83-.67-1.5-1.5-1.5a1.502 1.502 0 0 0-1.5 1.5v.004c0 .14-.114.255-.255.255h-.85a.255.255 0 0 1-.255-.255zM8 12.25a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Search Panel -->
+  <div id="searchPanel" class="search-panel">
+    <input type="text" id="searchInput" class="search-input" placeholder="検索ワードを入力...">
+    <span id="searchCount" class="search-count">0/0</span>
+    <button id="searchPrev" class="search-btn" title="前を検索 (Shift+Enter)">▲</button>
+    <button id="searchNext" class="search-btn" title="次を検索 (Enter)">▼</button>
+    <button id="searchClose" class="search-btn" title="閉じる (Esc)">✕</button>
+  </div>
+
+  <!-- Main View -->
+  <main class="app-main">
+    <!-- TOC Sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <span>目次 (Outline)</span>
+        <span id="tocCount" class="toc-count">0 件</span>
+      </div>
+      <div id="tocContent" class="sidebar-content">
+        <!-- Generated TOC items will appear here -->
+      </div>
+    </aside>
+
+    <!-- Markdown Content Container -->
+    <section id="contentContainer" class="content-container">
+      <div id="welcomeScreen" class="welcome-screen">
+        <svg class="welcome-icon" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M14.85 3H1.15C.52 3 0 3.52 0 4.15v7.69C0 12.48.52 13 1.15 13h13.69c.64 0 1.15-.52 1.15-1.15V4.15C16 3.52 15.48 3 14.85 3zM9 11H7V8.5L5.5 10.5 4 8.5V11H2V5h2l1.5 2L7 5h2v6zm2.99.5L9.5 8H11V5h2v3h1.5l-2.51 3.5z"/>
+        </svg>
+        <h1 class="welcome-title">超軽量 Markdown Viewer</h1>
+        <p class="welcome-desc">
+          Windows 11 に最適化された単一 EXE の高速 Markdown ビューアです。<br>
+          Markdown ファイル (.md) をここにドラッグ＆ドロップするか、<br>
+          下のボタンから開いてください。
+        </p>
+        <div class="welcome-buttons">
+          <button id="btnWelcomeOpen" class="btn-primary">
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor"><path d="M1.75 2.5a.25.25 0 0 0-.25.25v10.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25H7.707l-1.854-1.854A.25.25 0 0 0 5.679 2.5H1.75z"/></svg>
+            ファイルを選択
+          </button>
+          <button id="btnSample" class="btn-secondary">サンプルを表示</button>
+        </div>
+      </div>
+      <article id="markdownBody" class="markdown-body" style="display:none;"></article>
+    </section>
+  </main>
+
+  <!-- Status Bar -->
+  <footer class="statusbar">
+    <div class="statusbar-left">
+      <span id="statStats">文字数: 0 | 単語: 0 | 読了目安: 0分</span>
+      <span id="statPath"></span>
+    </div>
+    <div class="statusbar-right">
+      <span id="statReload">自動更新: 有効</span>
+      <span id="statUpdated">最終更新: -</span>
+    </div>
+  </footer>
+
+  <!-- Drag and Drop Overlay -->
+  <div id="dropOverlay" class="drop-overlay">
+    <svg viewBox="0 0 16 16" width="64" height="64" fill="currentColor">
+      <path d="M.5 9.9a.75.75 0 0 1 .75.75v2.6a1 1 0 0 0 1 1h11.5a1 1 0 0 0 1-1v-2.6a.75.75 0 0 1 1.5 0v2.6A2.5 2.5 0 0 1 13.75 15H2.25A2.5 2.5 0 0 1 0 12.5v-2.6a.75.75 0 0 1 .75-.75z"/>
+      <path d="M7.47 1.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1-1.06 1.06L8.75 3.56v7.19a.75.75 0 0 1-1.5 0V3.56L5.28 5.53a.75.75 0 0 1-1.06-1.06l3.25-3.25z"/>
+    </svg>
+    <div class="drop-overlay-text">ここにファイルをドロップして開く</div>
+  </div>
+
+  <!-- Image Lightbox Modal -->
+  <div id="imageModal" class="image-modal">
+    <img id="imageModalImg" src="" alt="Expanded Image">
+  </div>
+
+  <!-- Help / Shortcuts Modal -->
+  <div id="helpModal" class="help-modal">
+    <div class="help-card">
+      <div class="help-card-title">
+        <span>ショートカットキー一覧</span>
+        <button id="helpClose" class="search-btn">✕</button>
+      </div>
+      <div class="shortcut-row"><span>ファイルを開く</span><kbd>Ctrl + O</kbd></div>
+      <div class="shortcut-row"><span>再読み込み</span><kbd>Ctrl + R</kbd> / <kbd>F5</kbd></div>
+      <div class="shortcut-row"><span>ページ内検索</span><kbd>Ctrl + F</kbd></div>
+      <div class="shortcut-row"><span>目次（TOC）トグル</span><kbd>Ctrl + T</kbd></div>
+      <div class="shortcut-row"><span>印刷 / PDF出力</span><kbd>Ctrl + P</kbd></div>
+      <div class="shortcut-row"><span>拡大 / 縮小 / リセット</span><kbd>Ctrl + [+] / [-] / [0]</kbd></div>
+      <div class="shortcut-row"><span>ヘルプを表示</span><kbd>?</kbd> / <kbd>F1</kbd></div>
+      <div class="shortcut-row"><span>モーダルや検索を閉じる</span><kbd>Esc</kbd></div>
+    </div>
+  </div>
+
+  <!-- Embedded Marked.js -->
+  <script>
+    /* __MARKED_JS__ */
+  </script>
+
+  <!-- Embedded Highlight.js -->
+  <script>
+    /* __HIGHLIGHT_JS__ */
+  </script>
+
+  <!-- Main Viewer Application Logic -->
+  <script>
+    (function () {
+      // Elements
+      const htmlEl = document.documentElement;
+      const markdownBody = document.getElementById('markdownBody');
+      const welcomeScreen = document.getElementById('welcomeScreen');
+      const contentContainer = document.getElementById('contentContainer');
+      const sidebar = document.getElementById('sidebar');
+      const tocContent = document.getElementById('tocContent');
+      const tocCount = document.getElementById('tocCount');
+      const fileNameEl = document.getElementById('fileName');
+      const fileBadge = document.getElementById('fileBadge');
+      const dropOverlay = document.getElementById('dropOverlay');
+      const searchPanel = document.getElementById('searchPanel');
+      const searchInput = document.getElementById('searchInput');
+      const searchCount = document.getElementById('searchCount');
+      const imageModal = document.getElementById('imageModal');
+      const imageModalImg = document.getElementById('imageModalImg');
+      const helpModal = document.getElementById('helpModal');
+
+      // Buttons
+      const btnOpen = document.getElementById('btnOpen');
+      const btnWelcomeOpen = document.getElementById('btnWelcomeOpen');
+      const btnToc = document.getElementById('btnToc');
+      const btnSearch = document.getElementById('btnSearch');
+      const btnTheme = document.getElementById('btnTheme');
+      const btnPrint = document.getElementById('btnPrint');
+      const btnPin = document.getElementById('btnPin');
+      const btnHelp = document.getElementById('btnHelp');
+      const helpClose = document.getElementById('helpClose');
+      const btnSample = document.getElementById('btnSample');
+
+      // Status
+      const statStats = document.getElementById('statStats');
+      const statPath = document.getElementById('statPath');
+      const statUpdated = document.getElementById('statUpdated');
+
+      // State
+      let currentRawMarkdown = '';
+      let currentFilePath = '';
+      let isPinned = false;
+      let searchMatches = [];
+      let currentSearchIndex = -1;
+
+      // Configure Marked
+      if (window.marked) {
+        marked.setOptions({
+          gfm: true,
+          breaks: true,
+          headerIds: true,
+          mangle: false
+        });
+      }
+
+      // Initialize Highlight.js
+      function applyHighlight() {
+        if (window.hljs) {
+          document.querySelectorAll('.markdown-body pre code').forEach(block => {
+            hljs.highlightElement(block);
+          });
+        }
+      }
+
+      // Add Copy Buttons to Pre Code blocks
+      function addCodeCopyButtons() {
+        document.querySelectorAll('.markdown-body pre').forEach(pre => {
+          if (pre.querySelector('.code-copy-btn')) return;
+          const btn = document.createElement('button');
+          btn.className = 'code-copy-btn';
+          btn.innerText = 'Copy';
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const code = pre.querySelector('code');
+            const text = code ? code.innerText : pre.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+              btn.innerText = 'Copied!';
+              btn.classList.add('copied');
+              setTimeout(() => {
+                btn.innerText = 'Copy';
+                btn.classList.remove('copied');
+              }, 1800);
+            });
+          });
+          pre.appendChild(btn);
+        });
+      }
+
+      // Build Table of Contents
+      function buildTOC() {
+        tocContent.innerHTML = '';
+        const headings = markdownBody.querySelectorAll('h1, h2, h3, h4, h5, h6');
+        tocCount.innerText = headings.length + ' 件';
+
+        if (headings.length === 0) {
+          tocContent.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:12px;">見出しはありません</div>';
+          return;
+        }
+
+        headings.forEach((heading, idx) => {
+          if (!heading.id) {
+            heading.id = 'heading-' + idx;
+          }
+          const level = parseInt(heading.tagName.substring(1));
+          const a = document.createElement('a');
+          a.className = 'toc-item toc-level-' + level;
+          a.innerText = heading.innerText.trim();
+          a.title = heading.innerText.trim();
+          a.dataset.targetId = heading.id;
+
+          a.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = document.getElementById(heading.id);
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          });
+
+          tocContent.appendChild(a);
+        });
+
+        setupTOCScrollSpy();
+      }
+
+      // TOC Scroll Spy
+      function setupTOCScrollSpy() {
+        const headings = Array.from(markdownBody.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+        if (headings.length === 0) return;
+
+        const onScroll = () => {
+          const scrollPos = contentContainer.scrollTop + 60;
+          let currentId = '';
+
+          for (let i = headings.length - 1; i >= 0; i--) {
+            if (headings[i].offsetTop <= scrollPos) {
+              currentId = headings[i].id;
+              break;
+            }
+          }
+
+          document.querySelectorAll('.toc-item').forEach(item => {
+            if (item.dataset.targetId === currentId) {
+              item.classList.add('active');
+            } else {
+              item.classList.remove('active');
+            }
+          });
+        };
+
+        contentContainer.removeEventListener('scroll', contentContainer._tocSpy);
+        contentContainer._tocSpy = onScroll;
+        contentContainer.addEventListener('scroll', onScroll);
+        onScroll();
+      }
+
+      // Update Statistics
+      function updateStats(text) {
+        const charCount = text.length;
+        const wordCount = (text.match(/\S+/g) || []).length;
+        // Average reading speed: 500 chars/min for Japanese, 200 words/min for English
+        const readingTimeMin = Math.max(1, Math.ceil(charCount / 500));
+        statStats.innerText = `文字数: ${charCount.toLocaleString()} | 単語: ${wordCount.toLocaleString()} | 読了目安: 約${readingTimeMin}分`;
+      }
+
+      // Render Markdown
+      window.renderMarkdown = function (mdText, filePath, fileModTime) {
+        currentRawMarkdown = mdText;
+        currentFilePath = filePath || '';
+
+        // Save scroll ratio before rerender
+        const scrollRatio = contentContainer.scrollHeight > 0 
+          ? contentContainer.scrollTop / contentContainer.scrollHeight 
+          : 0;
+
+        if (!mdText || mdText.trim() === '') {
+          welcomeScreen.style.display = 'flex';
+          markdownBody.style.display = 'none';
+          fileNameEl.innerText = 'ファイル未読込';
+          fileBadge.classList.remove('active');
+          tocContent.innerHTML = '';
+          tocCount.innerText = '0 件';
+          statStats.innerText = '文字数: 0 | 単語: 0 | 読了目安: 0分';
+          statPath.innerText = '';
+          statUpdated.innerText = '最終更新: -';
+          return;
+        }
+
+        welcomeScreen.style.display = 'none';
+        markdownBody.style.display = 'block';
+
+        // Parse markdown
+        const html = marked.parse(mdText);
+        markdownBody.innerHTML = html;
+
+        // Process Links: Open external links in default browser
+        markdownBody.querySelectorAll('a').forEach(link => {
+          const href = link.getAttribute('href');
+          if (href && (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:'))) {
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.addEventListener('click', (e) => {
+              e.preventDefault();
+              postToHost({ type: 'open_external_url', url: href });
+            });
+          }
+        });
+
+        // Setup image modal triggers
+        markdownBody.querySelectorAll('img').forEach(img => {
+          img.addEventListener('click', () => {
+            imageModalImg.src = img.src;
+            imageModal.classList.add('visible');
+          });
+        });
+
+        // Enhance code blocks
+        applyHighlight();
+        addCodeCopyButtons();
+
+        // Build TOC
+        buildTOC();
+
+        // Update stats
+        updateStats(mdText);
+
+        // Update title and header info
+        if (filePath) {
+          const parts = filePath.split(/[\\/]/);
+          const fname = parts[parts.length - 1];
+          fileNameEl.innerText = fname;
+          fileBadge.title = filePath;
+          fileBadge.classList.add('active');
+          document.title = fname + ' - MDViewer';
+          statPath.innerText = filePath;
+        } else {
+          fileNameEl.innerText = '新規ドキュメント';
+          fileBadge.classList.add('active');
+          document.title = 'MDViewer';
+        }
+
+        if (fileModTime) {
+          statUpdated.innerText = '最終更新: ' + fileModTime;
+        }
+
+        // Restore scroll position
+        setTimeout(() => {
+          contentContainer.scrollTop = scrollRatio * contentContainer.scrollHeight;
+        }, 30);
+
+        // Dynamic Mermaid render if online and mermaid code blocks exist
+        tryRenderMermaid();
+      };
+
+      // Dynamic Mermaid Loader (Optional / Graceful Degradation)
+      function tryRenderMermaid() {
+        const mermaidBlocks = document.querySelectorAll('.markdown-body pre code.language-mermaid');
+        if (mermaidBlocks.length === 0) return;
+
+        if (window.mermaid) {
+          window.mermaid.run();
+        } else if (navigator.onLine) {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
+          script.onload = () => {
+            window.mermaid.initialize({ startOnLoad: false, theme: htmlEl.getAttribute('data-theme') === 'dark' ? 'dark' : 'default' });
+            mermaidBlocks.forEach(block => {
+              const div = document.createElement('div');
+              div.className = 'mermaid';
+              div.textContent = block.innerText;
+              block.parentElement.parentElement.replaceChild(div, block.parentElement);
+            });
+            window.mermaid.run();
+          };
+          document.head.appendChild(script);
+        }
+      }
+
+      // Theme Toggle
+      function toggleTheme() {
+        const current = htmlEl.getAttribute('data-theme') || 'dark';
+        const next = current === 'dark' ? 'light' : 'dark';
+        htmlEl.setAttribute('data-theme', next);
+
+        const darkHljs = document.getElementById('hljs-theme-dark');
+        const lightHljs = document.getElementById('hljs-theme-light');
+        if (next === 'light') {
+          darkHljs.setAttribute('disabled', 'disabled');
+          lightHljs.removeAttribute('disabled');
+        } else {
+          lightHljs.setAttribute('disabled', 'disabled');
+          darkHljs.removeAttribute('disabled');
+        }
+      }
+      btnTheme.addEventListener('click', toggleTheme);
+
+      // TOC Toggle
+      function toggleTOC() {
+        sidebar.classList.toggle('collapsed');
+        btnToc.classList.toggle('active', !sidebar.classList.contains('collapsed'));
+      }
+      btnToc.addEventListener('click', toggleTOC);
+
+      // Search functionality
+      function toggleSearch(show) {
+        if (show === undefined) {
+          searchPanel.classList.toggle('visible');
+        } else if (show) {
+          searchPanel.classList.add('visible');
+        } else {
+          searchPanel.classList.remove('visible');
+        }
+
+        if (searchPanel.classList.contains('visible')) {
+          searchInput.focus();
+          searchInput.select();
+          btnSearch.classList.add('active');
+        } else {
+          btnSearch.classList.remove('active');
+          clearSearch();
+        }
+      }
+      btnSearch.addEventListener('click', () => toggleSearch());
+      document.getElementById('searchClose').addEventListener('click', () => toggleSearch(false));
+
+      function clearSearch() {
+        document.querySelectorAll('mark.find-highlight').forEach(mark => {
+          const parent = mark.parentNode;
+          parent.replaceChild(document.createTextNode(mark.textContent), mark);
+          parent.normalize();
+        });
+        searchMatches = [];
+        currentSearchIndex = -1;
+        searchCount.innerText = '0/0';
+      }
+
+      function performSearch(forward) {
+        const query = searchInput.value.trim();
+        if (!query) {
+          clearSearch();
+          return;
+        }
+
+        if (searchMatches.length === 0 || searchInput.dataset.lastQuery !== query) {
+          clearSearch();
+          searchInput.dataset.lastQuery = query;
+
+          // Search text nodes
+          const walker = document.createTreeWalker(markdownBody, NodeFilter.SHOW_TEXT, null, false);
+          const nodesToReplace = [];
+          while (walker.nextNode()) {
+            const node = walker.currentNode;
+            if (node.parentElement && (node.parentElement.tagName === 'SCRIPT' || node.parentElement.tagName === 'STYLE')) continue;
+            if (node.nodeValue.toLowerCase().includes(query.toLowerCase())) {
+              nodesToReplace.push(node);
+            }
+          }
+
+          nodesToReplace.forEach(node => {
+            const text = node.nodeValue;
+            const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            const frag = document.createDocumentFragment();
+            let lastIndex = 0;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+              frag.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+              const mark = document.createElement('mark');
+              mark.className = 'find-highlight';
+              mark.textContent = match[0];
+              frag.appendChild(mark);
+              searchMatches.push(mark);
+              lastIndex = regex.lastIndex;
+            }
+            frag.appendChild(document.createTextNode(text.substring(lastIndex)));
+            node.parentNode.replaceChild(frag, node);
+          });
+
+          currentSearchIndex = 0;
+        } else {
+          if (forward) {
+            currentSearchIndex = (currentSearchIndex + 1) % searchMatches.length;
+          } else {
+            currentSearchIndex = (currentSearchIndex - 1 + searchMatches.length) % searchMatches.length;
+          }
+        }
+
+        if (searchMatches.length > 0) {
+          searchMatches.forEach((m, idx) => m.classList.toggle('current', idx === currentSearchIndex));
+          searchCount.innerText = `${currentSearchIndex + 1}/${searchMatches.length}`;
+          searchMatches[currentSearchIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          searchCount.innerText = '0/0';
+        }
+      }
+
+      searchInput.addEventListener('input', () => performSearch(true));
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          performSearch(!e.shiftKey);
+        } else if (e.key === 'Escape') {
+          toggleSearch(false);
+        }
+      });
+      document.getElementById('searchNext').addEventListener('click', () => performSearch(true));
+      document.getElementById('searchPrev').addEventListener('click', () => performSearch(false));
+
+      // Image modal close
+      imageModal.addEventListener('click', () => {
+        imageModal.classList.remove('visible');
+      });
+
+      // Help Modal
+      function toggleHelp(show) {
+        helpModal.classList.toggle('visible', show);
+      }
+      btnHelp.addEventListener('click', () => toggleHelp(true));
+      helpClose.addEventListener('click', () => toggleHelp(false));
+      helpModal.addEventListener('click', (e) => {
+        if (e.target === helpModal) toggleHelp(false);
+      });
+
+      // Print / PDF
+      btnPrint.addEventListener('click', () => window.print());
+
+      // Pin on Top Toggle
+      btnPin.addEventListener('click', () => {
+        isPinned = !isPinned;
+        btnPin.classList.toggle('active', isPinned);
+        postToHost({ type: 'toggle_pin', pinned: isPinned });
+      });
+      window.setPinState = function(pinned) {
+        isPinned = pinned;
+        btnPin.classList.toggle('active', isPinned);
+      };
+
+      // Open Dialog
+      btnOpen.addEventListener('click', () => postToHost({ type: 'open_file_dialog' }));
+      btnWelcomeOpen.addEventListener('click', () => postToHost({ type: 'open_file_dialog' }));
+
+      // Sample Button
+      btnSample.addEventListener('click', () => {
+        const sampleMd = `# MDViewer - 超軽量 Markdown ビューア
+
+Windows 11 に最適化された、単一 EXE の爆速 Markdown ビューアです。
+
+## 主な特長
+- **超軽量＆単一 EXE**: インストーラ不要、外部 DLL 不要でどこでも起動！
+- **リアルタイム同期**: 外部エディタでのファイル保存を検知して自動リロード。スクロール位置もキープ。
+- **美しいデザイン**: ダークモード・ライトモード、洗練されたフォントとレイアウト。
+- **完全オフライン対応**: インターネット接続がなくてもシンタックスハイライト・Gfmテーブルが即座に動作。
+
+---
+
+## コードハイライトの例
+
+\`\`\`csharp
+using System;
+using System.IO;
+
+namespace MDViewer {
+    class Program {
+        static void Main(string[] args) {
+            Console.WriteLine("Hello, MDViewer on Windows 11!");
+        }
+    }
+}
+\`\`\`
+
+\`\`\`javascript
+// ワンクリックでコードをコピー可能
+function greet(name) {
+  return \`Welcome to MDViewer, \${name}!\`;
+}
+console.log(greet("Antigravity"));
+\`\`\`
+
+---
+
+## 表組み（Table）
+
+| 機能名 | ショートカット | 説明 |
+| :--- | :---: | :--- |
+| ファイルを開く | \`Ctrl + O\` | ダイアログからファイルを選択 |
+| 目次トグル | \`Ctrl + T\` | サイドバーのアウトライン開閉 |
+| ページ内検索 | \`Ctrl + F\` | 高速テキスト検索＆ハイライト |
+| 印刷・PDF | \`Ctrl + P\` | ドキュメントの印刷・PDF出力 |
+| テーマ切替 | ボタン | ダーク / ライトモード切り替え |
+
+---
+
+## タスクリスト＆チェックボックス
+- [x] Windows 11 完全対応
+- [x] 超軽量・単一 EXE パッケージング
+- [x] ドラッグ＆ドロップ対応
+- [x] 目次（TOC）自動生成とスクロール追従
+- [x] コードブロックのコピー機能
+- [ ] さらなる拡張
+
+---
+
+## 引用とアラート
+> **Note**: MDViewer は Edge Chromium (WebView2) を利用して、GitHub と同等の美麗な描画を提供します。
+`;
+        renderMarkdown(sampleMd, 'sample_overview.md', new Date().toLocaleTimeString());
+      });
+
+      // Global Keyboard Shortcuts
+      document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          switch (e.key.toLowerCase()) {
+            case 'o':
+              e.preventDefault();
+              postToHost({ type: 'open_file_dialog' });
+              break;
+            case 'f':
+              e.preventDefault();
+              toggleSearch(true);
+              break;
+            case 't':
+              e.preventDefault();
+              toggleTOC();
+              break;
+            case 'p':
+              e.preventDefault();
+              window.print();
+              break;
+            case 'r':
+              e.preventDefault();
+              postToHost({ type: 'reload_file' });
+              break;
+          }
+        } else if (e.key === 'Escape') {
+          if (imageModal.classList.contains('visible')) {
+            imageModal.classList.remove('visible');
+          } else if (helpModal.classList.contains('visible')) {
+            toggleHelp(false);
+          } else if (searchPanel.classList.contains('visible')) {
+            toggleSearch(false);
+          }
+        } else if (e.key === '?' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+          toggleHelp(true);
+        } else if (e.key === 'F1') {
+          e.preventDefault();
+          toggleHelp(true);
+        } else if (e.key === 'F5') {
+          e.preventDefault();
+          postToHost({ type: 'reload_file' });
+        }
+      });
+
+      // Drag and Drop Handling (Native HTML5 drag events inside WebView2)
+      window.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropOverlay.classList.add('active');
+      });
+      window.addEventListener('dragleave', (e) => {
+        if (e.relatedTarget === null) {
+          dropOverlay.classList.remove('active');
+        }
+      });
+      window.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropOverlay.classList.remove('active');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          const file = e.dataTransfer.files[0];
+          // If browser has direct access to read file
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            renderMarkdown(evt.target.result, file.name, new Date(file.lastModified).toLocaleTimeString());
+          };
+          reader.readAsText(file);
+        }
+      });
+
+      // Inter-process Communication with C# Host
+      function postToHost(msg) {
+        if (window.chrome && window.chrome.webview) {
+          window.chrome.webview.postMessage(msg);
+        } else {
+          console.log('Host Message:', msg);
+        }
+      }
+
+      // Initial call to let host know UI is ready
+      postToHost({ type: 'ui_ready' });
+
+    })();
+  </script>
+</body>
+</html>
