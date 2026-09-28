@@ -19,8 +19,10 @@ $cscArgs = @(
     "/reference:System.Core.dll",
     "/reference:$wv2WinForms",
     "/reference:$wv2Core",
+    "/win32icon:src\Resources\app.ico",
     "/resource:src\Resources\viewer.html,MDViewer.Resources.viewer.html",
     "/resource:src\Resources\WebView2Loader.dll,MDViewer.Resources.WebView2Loader.dll",
+    "/resource:src\Resources\app.ico,MDViewer.Resources.app.ico",
     "src\Program.cs"
 )
 

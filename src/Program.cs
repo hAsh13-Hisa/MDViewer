@@ -13,9 +13,9 @@ using Microsoft.Web.WebView2.WinForms;
 [assembly: AssemblyTitle("MDViewer")]
 [assembly: AssemblyDescription("Lightweight Single-Executable Markdown Viewer for Windows 11")]
 [assembly: AssemblyProduct("MDViewer")]
-[assembly: AssemblyVersion("1.1.0.0")]
-[assembly: AssemblyFileVersion("1.1.0.0")]
-[assembly: AssemblyInformationalVersion("1.1.0")]
+[assembly: AssemblyVersion("1.2.0.0")]
+[assembly: AssemblyFileVersion("1.2.0.0")]
+[assembly: AssemblyInformationalVersion("1.2.0")]
 
 namespace MDViewer
 {
@@ -82,7 +82,7 @@ namespace MDViewer
             this.initialFile = initialFile;
 
             // Form properties
-            this.Text = "MDViewer v1.1.0";
+            this.Text = "MDViewer v1.2.0";
             this.Width = 1100;
             this.Height = 780;
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -108,20 +108,31 @@ namespace MDViewer
 
         private Icon CreateAppIcon()
         {
-            // Dynamically draw a clean modern Markdown document icon
+            try
+            {
+                var assembly = Assembly.GetExecutingAssembly();
+                using (var stream = assembly.GetManifestResourceStream("MDViewer.Resources.app.ico"))
+                {
+                    if (stream != null)
+                    {
+                        return new Icon(stream);
+                    }
+                }
+            }
+            catch { }
+
+            // Fallback dynamic icon
             Bitmap bmp = new Bitmap(32, 32);
             using (Graphics g = Graphics.FromImage(bmp))
             {
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 g.Clear(Color.Transparent);
 
-                // Background rounded rect
                 using (Brush brush = new SolidBrush(Color.FromArgb(9, 105, 218)))
                 {
                     g.FillRectangle(brush, 4, 3, 24, 26);
                 }
 
-                // Inner white M
                 using (Pen pen = new Pen(Color.White, 2.2f))
                 {
                     g.DrawLines(pen, new Point[] {
@@ -131,7 +142,6 @@ namespace MDViewer
                         new Point(16, 11),
                         new Point(16, 20)
                     });
-                    // Arrow down
                     g.DrawLines(pen, new Point[] {
                         new Point(20, 11),
                         new Point(20, 19)
@@ -276,7 +286,7 @@ namespace MDViewer
                 );
 
                 this.BeginInvoke(new Action(() => {
-                    this.Text = fileName + " - MDViewer v1.1.0";
+                    this.Text = fileName + " - MDViewer v1.2.0";
                     webView.ExecuteScriptAsync(script);
                 }));
 
